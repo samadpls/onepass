@@ -125,6 +125,7 @@ def train(base, data_dir, out_dir, *, rank=32, alpha=64, lr=2e-4, epochs=1, max_
         r=rank, lora_alpha=alpha, lora_dropout=0.0, task_type="CAUSAL_LM",
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]))
     model.print_trainable_parameters()
+    model.train()  # from_pretrained returns eval mode, which silently disables gradient checkpointing
 
     use_amp = dtype == "fp16" and device == "cuda"
     if use_amp:
