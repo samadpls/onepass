@@ -1,5 +1,7 @@
 # onepass
 
+![onepass: typed decisions from one forward pass](https://raw.githubusercontent.com/samadpls/onepass/main/assets/hero.png)
+
 A tiny open decision model. You give it a piece of text (the "state") and typed
 questions: yes/no, choose one option, or pick a level on a scale. It returns a
 probability for every possible answer, for all questions at once, from a single
