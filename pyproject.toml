@@ -1,0 +1,36 @@
+[project]
+name = "onepass"
+version = "0.1.0"
+description = "A tiny open decision model: typed yes/no, choice and score answers with calibrated probabilities from one forward pass."
+readme = "README.md"
+authors = [
+    { name = "samadpls", email = "abdulsamadsid1@gmail.com" }
+]
+requires-python = ">=3.11"
+license = "Apache-2.0"
+dependencies = []
+
+[project.optional-dependencies]
+train = ["torch", "transformers>=4.51", "peft", "datasets", "pandas"]
+
+[project.urls]
+Homepage = "https://github.com/samadpls/onepass"
+Author = "https://samadpls.com"
+
+[build-system]
+requires = ["uv_build>=0.12.2,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["pytest"]
+research = [
+    "accelerate>=1.16.0",
+    "datasets>=5.2.0",
+    "huggingface-hub>=2.4.0",
+    "kaggle>=2.2.5",
+    "llama-cpp-python>=0.3.38",
+    "peft>=0.22.0",
+    "six>=1.17.0",
+    "torch>=2.15.0",
+    "transformers>=5.24.0",
+]
