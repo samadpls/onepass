@@ -22,6 +22,52 @@ Measured so far, on the 400-case test split of
 | Qwen3-0.6B, no fine-tuning | 0.311 | 0.888 | 0.428 | 0.306 |
 | Prior: label frequencies, ignores the input | 0.481 | 0.327 | 0.181 | 0.036 |
 
+The fine-tuned model is training now. Its scores go here when they are measured.
+
+### Why read answers instead of generating them
+
+We asked base Qwen3-0.6B (8-bit GGUF, llama.cpp, thinking off) to *write* a JSON
+answer for each of the 400 test cases:
+
+| | Writes its answers | onepass (same 8-bit file) |
+|---|---|---|
+| Cases with a question missing | 37 of 400 (9.3%) | none, by design |
+| Generated tokens per case | 49 | 0 |
+| Time per case (5 questions, Apple M3 Pro GPU) | 497 ms | about 156 ms |
+| Probabilities for every option | no | yes |
+
+## Run it locally
+
+```bash
+pip install "git+https://github.com/samadpls/onepass" llama-cpp-python
+python -m onepass.serve path/to/onepass.gguf
+```
+
+Then open http://127.0.0.1:8000 for the demo page, or call the API:
+
+```bash
+curl -s http://127.0.0.1:8000/v1/systemone -d '{
+  "state": "My card was charged twice for one order, please refund the extra charge.",
+  "questions": {
+    "refund": {"type": "noul", "instructions": "The customer wants a refund.",
+               "criteria": {"true": "Yes.", "false": "No."}},
+    "team": {"type": "choice", "instructions": "Which team should handle this?",
+             "criteria": {"billing": "Payments and refunds.", "tech": "Bugs and setup."}}
+  }
+}'
+```
+
+From Python:
+
+```python
+from onepass.model import Model
+
+model = Model("onepass.gguf")
+model.ask(state, questions)  # {"refund": {"label": "true", "probabilities": {...}}, ...}
+```
+
+The model file is not published yet.
+
 ## How it works
 
 1. **One slot per question.** The prompt lists the state, then each question with
@@ -33,6 +79,18 @@ Measured so far, on the 400-case test split of
 3. **Trained on probabilities.** Where a dataset has several human raters, the
    training target is the share of raters who chose each answer, not a single
    label.
+4. **One decode call at run time.** `onepass.model` puts the whole prompt in one
+   llama.cpp batch and asks for scores only at the answer positions, so the
+   full vocabulary is never stored for every token.
+
+| Part | File |
+|---|---|
+| Prompt layout | [src/onepass/prompt.py](src/onepass/prompt.py) |
+| Training data | [src/onepass/build.py](src/onepass/build.py) |
+| Training (LoRA, loss at the answer slots only) | [src/onepass/train.py](src/onepass/train.py) |
+| Scoring (typed-decisions formulas) and held-out sets | [src/onepass/score.py](src/onepass/score.py), [src/onepass/heldout.py](src/onepass/heldout.py) |
+| GGUF export and quantization | [src/onepass/export.py](src/onepass/export.py) |
+| Local runtime, server and demo page | [src/onepass/model.py](src/onepass/model.py), [src/onepass/serve.py](src/onepass/serve.py) |
 
 ## Training data
 

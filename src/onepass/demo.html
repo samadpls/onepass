@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>onepass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Geist:wght@400;500;600&family=Geist+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #1d2cf3; --blue-2: #3b49f6; --navy: #0f1452; --yellow: #ffc61a;
+    --lavender: #f2f3fd; --card: #ffffff; --line: #d9dcf5; --muted: #5b6190; --bar: #e6e8fb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--lavender); color: var(--navy); font: 16px/1.5 "Geist", system-ui, sans-serif; }
+  h1, h2, h3 { font-family: "Bricolage Grotesque", sans-serif; margin: 0; letter-spacing: -0.02em; }
+  header { background: var(--blue); color: #fff; padding: 40px 24px 44px; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .kicker { color: var(--yellow); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; font-size: 13px; }
+  header h1 { font-size: clamp(48px, 8vw, 88px); font-weight: 800; line-height: 1; margin-top: 14px; }
+  header p { font-size: clamp(17px, 2.2vw, 22px); margin: 16px 0 0; max-width: 760px; }
+  header p em { color: var(--yellow); font-style: normal; }
+  main { padding: 28px 24px 56px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border-radius: 22px; padding: 24px; }
+  .card h2 { font-size: 24px; font-weight: 700; margin-bottom: 14px; }
+  label { display: block; font-weight: 600; font-size: 14px; margin: 16px 0 6px; }
+  textarea { width: 100%; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px 14px;
+    font: 13.5px/1.5 "Geist Mono", ui-monospace, monospace; color: var(--navy); background: #fbfbff; resize: vertical; }
+  textarea:focus { outline: 2px solid var(--blue); border-color: transparent; }
+  .examples { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--muted); }
+  .examples button { background: none; border: 0; padding: 0; color: var(--blue); font: 600 14px "Geist", sans-serif;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .go { margin-top: 18px; width: 100%; background: var(--blue); color: #fff; border: 0; border-radius: 14px;
+    padding: 15px; font: 700 18px "Bricolage Grotesque", sans-serif; cursor: pointer; }
+  .go:hover { background: var(--navy); }
+  .go:disabled { opacity: .6; cursor: wait; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px; }
+  .stat { background: var(--lavender); border-radius: 16px; padding: 14px 16px; }
+  .stat b { display: block; font: 800 34px/1.1 "Bricolage Grotesque", sans-serif; color: var(--blue); }
+  .stat span { font-size: 13px; color: var(--muted); }
+  .q { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 16px; }
+  .q h3 { font-size: 17px; font-weight: 700; }
+  .q .kind { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+  .opt { display: grid; grid-template-columns: minmax(90px, 34%) 1fr 52px; align-items: center; gap: 10px; margin-top: 8px; font-size: 14px; }
+  .opt .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .track { height: 12px; background: var(--bar); border-radius: 6px; overflow: hidden; }
+  .fill { height: 100%; background: #9aa3f7; border-radius: 6px; transition: width .4s ease; }
+  .opt.top .fill { background: var(--blue); }
+  .opt.top .name { font-weight: 600; }
+  .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .opt.top .pct { color: var(--navy); font-weight: 600; }
+  .note { color: var(--muted); font-size: 14px; }
+  .err { color: #b42318; font-weight: 600; }
+  footer { text-align: center; color: var(--muted); font-size: 14px; padding-bottom: 32px; }
+  footer a { color: var(--blue); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="kicker">Qwen Local Hackathon 2026</div>
+    <h1>onepass</h1>
+    <p>Ask typed questions about any text. Every answer is a probability, read from <em>one forward pass</em>, with <em>zero generated tokens</em>.</p>
+  </div>
+</header>
+<main>
+  <div class="wrap grid">
+    <section class="card">
+      <h2>Ask</h2>
+      <div class="examples">Examples:
+        <button data-ex="support">Support email</button>
+        <button data-ex="agent">Agent run</button>
+        <button data-ex="invoice">Invoice</button>
+        <button data-ex="comment">Comment</button>
+      </div>
+      <label for="state">State: any text or JSON</label>
+      <textarea id="state" rows="9"></textarea>
+      <label for="questions">Typed questions (yes/no "noul", "choice", "score")</label>
+      <textarea id="questions" rows="14"></textarea>
+      <button class="go" id="go">Decide</button>
+    </section>
+    <section class="card">
+      <h2>Answers</h2>
+      <div class="stats">
+        <div class="stat"><b id="ms">-</b><span>milliseconds</span></div>
+        <div class="stat"><b id="nq">-</b><span>questions, one pass</span></div>
+        <div class="stat"><b>0</b><span>generated tokens</span></div>
+      </div>
+      <div id="out"><p class="note">Pick an example or write your own, then press Decide.</p></div>
+    </section>
+  </div>
+</main>
+<footer>Runs on your own machine. <a href="https://github.com/samadpls/onepass">github.com/samadpls/onepass</a></footer>
+<script>
+const EX = {
+  support: {
+    state: "Hi, I ordered a blender (order 4471) two weeks ago and it arrived broken. I want my money back, not a replacement. This is the second time this has happened. Please fix this today.",
+    questions: {
+      refund: {type: "noul", instructions: "The customer is asking for a refund.", criteria: {true: "They want their money back.", false: "They want something else."}},
+      team: {type: "choice", instructions: "Which team should handle this?", criteria: {billing: "Payments, refunds and charges.", technical_support: "Product faults and setup help.", sales: "New orders and pricing."}},
+      urgency: {type: "score", instructions: "How urgent is this?", criteria: ["Can wait.", "Normal queue.", "Today.", "Right now."]},
+      mood: {type: "choice", instructions: "How does the customer feel?", criteria: {calm: "Neutral or relaxed.", annoyed: "Unhappy but polite.", angry: "Very upset."}}
+    }
+  },
+  agent: {
+    state: {task: "Delete old log files from the staging server to free disk space.", agent: {autonomy: "full"},
+            trace_summary: {steps: 42, tool_errors: 3, irreversible_actions: 2, duration_s: 410},
+            last_actions: ["rm -rf /var/log/app/*.gz", "rm -rf /var/lib/postgresql/backups"]},
+    questions: {
+      needs_review: {type: "noul", instructions: "A human should review this run.", criteria: {true: "Someone should check it.", false: "No attention needed."}},
+      action: {type: "choice", instructions: "What should we do with this agent now?", criteria: {continue: "Let it keep going.", observe: "Keep going but flag it.", stop: "Stop it now."}},
+      risk: {type: "score", instructions: "How risky was this run?", criteria: ["Safe, read-only.", "Routine changes.", "Irreversible or out of scope.", "Destructive."]}
+    }
+  },
+  invoice: {
+    state: {vendor: "Northwind Supplies", invoice_total: 12480.00, purchase_order_total: 9800.00, items_received: "8 of 10 boxes",
+            note: "Invoice includes an express shipping fee that was not on the order."},
+    questions: {
+      matches_order: {type: "noul", instructions: "The invoice matches the purchase order.", criteria: {true: "Amounts and items agree.", false: "Something differs."}},
+      action: {type: "choice", instructions: "What should accounts payable do?", criteria: {pay: "Pay in full.", hold: "Hold and ask the vendor.", reject: "Reject the invoice."}}
+    }
+  },
+  comment: {
+    state: "Honestly the new update is garbage and whoever designed it should be fired. Took me an hour to find the export button.",
+    questions: {
+      toxic: {type: "noul", instructions: "This comment is toxic.", criteria: {true: "Rude or abusive.", false: "Acceptable."}},
+      insult: {type: "score", instructions: "How insulting is this comment?", criteria: ["not at all", "slightly", "moderately", "very", "extremely"]},
+      topic: {type: "choice", instructions: "What is the comment about?", criteria: {product: "The product or a feature.", support: "Customer service.", price: "Cost or billing."}}
+    }
+  }
+};
+const $ = id => document.getElementById(id);
+function load(name) {
+  const ex = EX[name];
+  $("state").value = typeof ex.state === "string" ? ex.state : JSON.stringify(ex.state, null, 2);
+  $("questions").value = JSON.stringify(ex.questions, null, 2);
+}
+document.querySelectorAll("[data-ex]").forEach(b => b.onclick = () => load(b.dataset.ex));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const KIND = {noul: "yes / no", choice: "choose one", score: "level"};
+async function decide() {
+  let state = $("state").value.trim(), questions;
+  try { state = JSON.parse(state); } catch (e) { /* plain text state */ }
+  try { questions = JSON.parse($("questions").value); }
+  catch (e) { $("out").innerHTML = `<p class="err">The questions are not valid JSON: ${esc(e.message)}</p>`; return; }
+  $("go").disabled = true;
+  try {
+    const r = await fetch("/v1/systemone", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({state, questions})});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || r.status);
+    $("ms").textContent = Math.round(data.latency_ms);
+    $("nq").textContent = Object.keys(data.answers).length;
+    $("out").innerHTML = Object.entries(data.answers).map(([qid, a]) => {
+      const q = questions[qid] || {};
+      const extra = a.type === "score" ? ` · expected level ${a.expected.toFixed(2)}` : "";
+      const opts = Object.entries(a.probabilities).map(([label, p]) => {
+        const desc = a.type === "score" ? `${label}: ${(q.criteria || [])[+label] || ""}` : label;
+        return `<div class="opt${label === a.label ? " top" : ""}"><span class="name" title="${esc(desc)}">${esc(desc)}</span>
+          <div class="track"><div class="fill" style="width:${(p * 100).toFixed(1)}%"></div></div>
+          <span class="pct">${(p * 100).toFixed(0)}%</span></div>`;
+      }).join("");
+      return `<div class="q"><h3>${esc(q.instructions || qid)}</h3><div class="kind">${KIND[a.type] || a.type}${extra}</div>${opts}</div>`;
+    }).join("");
+  } catch (e) {
+    $("out").innerHTML = `<p class="err">${esc(e.message)}</p>`;
+  } finally { $("go").disabled = false; }
+}
+$("go").onclick = decide;
+load("support");
+</script>
+</body>
+</html>
