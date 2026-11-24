@@ -1,0 +1,17 @@
+{
+  "id": "samadpls/onepass-train-l4",
+  "title": "onepass train L4",
+  "code_file": "train.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "samadpls/onepass-mix"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "keywords": [],
+  "machine_shape": "NvidiaL4"
+}

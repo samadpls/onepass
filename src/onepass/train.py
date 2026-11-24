@@ -103,7 +103,8 @@ def evaluate(model, letter_ids, items, pad_id, device, max_tokens, autocast):
 
 
 def train(base, data_dir, out_dir, *, rank=32, alpha=64, lr=2e-4, epochs=1, max_tokens=8192, max_len=1536,
-          warmup=100, eval_every=500, max_steps=None, max_minutes=None, dtype="fp16", device=None, seed=0, log=print):
+          warmup=100, eval_every=500, max_steps=None, max_minutes=None, dtype="fp16", checkpointing=True, device=None,
+          seed=0, log=print):
     from peft import LoraConfig, get_peft_model
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -117,15 +118,21 @@ def train(base, data_dir, out_dir, *, rank=32, alpha=64, lr=2e-4, epochs=1, max_
 
     model = AutoModelForCausalLM.from_pretrained(base, dtype=torch.float32).to(device)
     model.config.use_cache = False
-    model.gradient_checkpointing_enable()
-    model.enable_input_require_grads()
+    if checkpointing:
+        model.gradient_checkpointing_enable()
+        model.enable_input_require_grads()
     model = get_peft_model(model, LoraConfig(
         r=rank, lora_alpha=alpha, lora_dropout=0.0, task_type="CAUSAL_LM",
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]))
     model.print_trainable_parameters()
 
     use_amp = dtype == "fp16" and device == "cuda"
-    autocast = (lambda: torch.autocast("cuda", dtype=torch.float16)) if use_amp else (lambda: torch.autocast(device, enabled=False))
+    if use_amp:
+        autocast = lambda: torch.autocast("cuda", dtype=torch.float16)
+    elif dtype == "bf16" and device in ("cuda", "mps"):
+        autocast = lambda: torch.autocast(device, dtype=torch.bfloat16)
+    else:
+        autocast = lambda: torch.autocast(device, enabled=False)
     scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
     opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=lr, weight_decay=0.0)
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
