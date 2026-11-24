@@ -78,6 +78,16 @@ def fit_temperature(model, tok, letter_ids, val_items, device, max_tokens=16384)
     return best, nll(1.0), nll(best)
 
 
+def heldout(model, tok, letters, device, temperature=1.0):
+    """Held-out human sets; a failure here must not lose the typed-decisions results."""
+    try:
+        from onepass.heldout import evaluate_all
+        return evaluate_all(model, tok, letters, device, temperature)
+    except Exception as e:  # noqa: BLE001
+        print("held-out evaluation failed:", repr(e), flush=True)
+        return {"error": repr(e)}
+
+
 def run(base, data_dir, out_dir, test_path, device="cuda", **train_kwargs):
     """Train, then score base, tuned and temperature-calibrated on typed-decisions."""
     from pathlib import Path
@@ -96,6 +106,7 @@ def run(base, data_dir, out_dir, test_path, device="cuda", **train_kwargs):
     results = {"base_model": base, "history": history}
     results["base"], _ = typed_decisions(model, tok, letters, test_path, device)
     print("base", {k: v for k, v in results["base"].items() if not isinstance(v, dict)}, flush=True)
+    results["heldout_base"] = heldout(model, tok, letters, device)
     model = PeftModel.from_pretrained(model, out / "adapter")
     val_items, _ = encode_records(Path(data_dir) / "val.jsonl", tok, 1536)
     T, nll1, nllT = fit_temperature(model, tok, letters, val_items, device)
@@ -104,6 +115,8 @@ def run(base, data_dir, out_dir, test_path, device="cuda", **train_kwargs):
     results["tuned_calibrated"], preds = typed_decisions(model, tok, letters, test_path, device, temperature=T)
     for k in ("tuned", "tuned_calibrated"):
         print(k, {a: b for a, b in results[k].items() if not isinstance(b, dict)}, flush=True)
+    json.dump(results, open(out / "results.json", "w"), indent=1)
+    results["heldout_tuned_calibrated"] = heldout(model, tok, letters, device, temperature=T)
     json.dump(results, open(out / "results.json", "w"), indent=1)
     cases = load_cases(test_path)
     import pandas as pd
