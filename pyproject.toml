@@ -11,7 +11,11 @@ license = "Apache-2.0"
 dependencies = []
 
 [project.optional-dependencies]
+serve = ["llama-cpp-python>=0.3.38", "numpy"]
 train = ["torch", "transformers>=4.51", "peft", "datasets", "pandas"]
+
+[project.scripts]
+onepass-serve = "onepass.serve:main"
 
 [project.urls]
 Homepage = "https://github.com/samadpls/onepass"

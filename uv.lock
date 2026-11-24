@@ -1195,6 +1195,11 @@ version = "0.1.0"
 source = { editable = "." }
 
 [package.optional-dependencies]
+serve = [
+    { name = "llama-cpp-python" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
 train = [
     { name = "datasets" },
     { name = "pandas" },
@@ -1223,12 +1228,14 @@ research = [
 [package.metadata]
 requires-dist = [
     { name = "datasets", marker = "extra == 'train'" },
+    { name = "llama-cpp-python", marker = "extra == 'serve'", specifier = ">=0.3.38" },
+    { name = "numpy", marker = "extra == 'serve'" },
     { name = "pandas", marker = "extra == 'train'" },
     { name = "peft", marker = "extra == 'train'" },
     { name = "torch", marker = "extra == 'train'" },
     { name = "transformers", marker = "extra == 'train'", specifier = ">=4.51" },
 ]
-provides-extras = ["train"]
+provides-extras = ["serve", "train"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest" }]
