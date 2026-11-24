@@ -13,6 +13,8 @@ from pathlib import Path
 
 from datasets import load_dataset
 
+from onepass.prompt import options
+
 SEED = 0
 MAX_CHARS = 2000
 
@@ -295,6 +297,121 @@ def brighter(rng, cap):
                "targets": {e: onehot([str(j) for j in range(4)], str(r[e])) for e in keys}}
 
 
+# ---------------------------------------------------------------- open typed-decision data
+# Vetted 2026-11-24: open licenses, labels from open-weight models or rules, and no
+# state, question schema, instruction or criteria list shared with LocalLLaMA/typed-decisions.
+# The benchmark's own workflows (agent traces, customer service, invoices, security
+# alerts) are filtered out so the model stays zero-shot on them.
+
+BENCHMARK_LIKE = re.compile(r"invoice|accounts payable|purchase order|customer (service|support)|support ticket|helpdesk|"
+                            r"security (alert|incident)|\bsoc\b|agent trace|tool call", re.I)
+
+
+def as_obj(x):
+    return json.loads(x) if isinstance(x, str) else x
+
+
+def maybe_json(state):
+    if isinstance(state, str) and state[:1] in "{[":
+        try:
+            return json.loads(state)
+        except ValueError:
+            pass
+    return state
+
+
+def shuffle_choices(rng, questions, targets):
+    """Gold answers often come first in generated data; shuffle choice options (never score levels)."""
+    for qid, q in questions.items():
+        if q["type"] == "choice":
+            items = list(q["criteria"].items())
+            rng.shuffle(items)
+            q["criteria"] = dict(items)
+            targets[qid] = {k: targets[qid][k] for k, _ in items}
+
+
+def to_targets(question, answer):
+    """System One answer ({"noul": p} or {"probabilities": {...}}) -> {label: p} over the question's options."""
+    if question["type"] == "noul":
+        p = answer["noul"] if "noul" in answer else answer["probabilities"].get("true", answer["probabilities"].get("yes"))
+        return binary(p)
+    probs = {str(k): float(v) for k, v in answer["probabilities"].items()}
+    labels = [str(label) for label, _ in options(question)]
+    return normalize({label: probs.get(label, 0.0) for label in labels})
+
+
+def typed_synth(rng, cap):
+    """n4ze3m/typed-decisions-synth (MIT): business-style states, soft labels from DeepSeek V4.1 Flash (mean of 3)."""
+    from huggingface_hub import hf_hub_download
+    rows = [json.loads(line) for line in open(hf_hub_download("n4ze3m/typed-decisions-synth", "data/train.jsonl", repo_type="dataset"))]
+    rows = [r for r in rows if not BENCHMARK_LIKE.search(r.get("domain", ""))]
+    rng.shuffle(rows)
+    for r in rows[:cap]:
+        qs, teacher = as_obj(r["questions"]), as_obj(r["teacher"])
+        targets = {qid: to_targets(q, teacher[qid]) for qid, q in qs.items()}
+        shuffle_choices(rng, qs, targets)
+        yield {"state": maybe_json(r["state"]), "questions": qs, "targets": targets}
+
+
+def sn92_specialists(rng, cap, per_family=80):
+    """decisionmodels/sn92-specialists (CC BY 4.0, credit REAX / decisionmodels): one question per row,
+    labels from open-weight models or rules, smoothed (top option 0.86-0.92)."""
+    from huggingface_hub import HfApi, hf_hub_download
+    repo = "decisionmodels/sn92-specialists"
+    files = [f for f in HfApi().list_repo_files(repo, repo_type="dataset")
+             if f.endswith(".jsonl") and (f.endswith("/train.jsonl") or "/train-factory-" in f)]
+    by_family = defaultdict(list)
+    for f in sorted(files):
+        for line in open(hf_hub_download(repo, f, repo_type="dataset")):
+            r = json.loads(line)
+            if (r.get("lang", "en") != "en" or r["category"] == "customer_support"
+                    or r["family"] in ("other.proc_payment_on_time", "llm_guardrails.proc_tool_call_gate")
+                    or BENCHMARK_LIKE.search(r.get("domain") or "")):
+                continue
+            by_family[r["family"]].append(r)
+    picked = []
+    for fam in sorted(by_family):
+        rows = by_family[fam]
+        rng.shuffle(rows)
+        picked += rows[:per_family]
+    rng.shuffle(picked)
+    for r in picked[:cap]:
+        q = dict(as_obj(r["question"]))
+        qid = r["family"].split(".")[-1]
+        probs = {{"yes": "true", "no": "false"}.get(str(k), str(k)): v for k, v in as_obj(r["target_probs"]).items()}
+        targets = {qid: to_targets(q, {"probabilities": probs})}
+        qs = {qid: q}
+        shuffle_choices(rng, qs, targets)
+        yield {"state": maybe_json(r["state"]) if isinstance(r["state"], str) else r["state"], "questions": qs, "targets": targets}
+
+
+PROCEDURAL = ["policy_applicability", "record_eligibility", "state_perturbation", "event_state_reconstruction",
+              "record_aggregation", "table_lookup", "taxonomy_routing", "evidence_sufficiency", "instruction_execution"]
+
+
+def procedural(rng, cap, max_level=2):
+    """tasksource/procedural-typed-decisions (Apache-2.0): JSON records and policies, answers computed by rules."""
+    import pandas as pd
+    from huggingface_hub import hf_hub_download
+    per = cap // len(PROCEDURAL)
+    for config in PROCEDURAL:
+        path = hf_hub_download("tasksource/procedural-typed-decisions", f"{config}/train-00000-of-00001.parquet", repo_type="dataset")
+        df = pd.read_parquet(path, columns=["level", "state", "questions", "answers"])
+        df = df[df.level.astype(int) <= max_level]
+        for r in df.sample(n=min(per, len(df)), random_state=SEED).itertuples():
+            qs, answers = as_obj(r.questions), as_obj(r.answers)
+            for q in qs.values():
+                if q["type"] == "choice":
+                    q["criteria"] = {k: (v if v else k) for k, v in q["criteria"].items()}
+            targets = {qid: to_targets(q, answers[qid]) for qid, q in qs.items()}
+            shuffle_choices(rng, qs, targets)
+            yield {"state": maybe_json(r.state), "questions": qs, "targets": targets}
+
+
+OPEN_SOURCES = {"typed_synth": (typed_synth, 7500), "sn92_specialists": (sn92_specialists, 13000),
+                "procedural": (procedural, 9000)}
+
+
 SOURCES = {  # name: (builder, number of texts)
     "boolq": (boolq, 6000), "unli": (unli, 8000), "mnli": (mnli, 5000), "wanli": (wanli, 5000),
     "civil_comments": (civil_comments, 8000), "paws": (paws, 4000), "vitaminc": (vitaminc, 5000),
@@ -306,7 +423,6 @@ SOURCES = {  # name: (builder, number of texts)
 
 def check(rec):
     """Every question has a target over exactly its options, summing to 1."""
-    from onepass.prompt import options
     assert set(rec["questions"]) == set(rec["targets"]), rec["src"]
     for qid, q in rec["questions"].items():
         labels = [label for label, _ in options(q)]
@@ -315,12 +431,12 @@ def check(rec):
         assert abs(sum(t.values()) - 1) < 1e-6 and min(t.values()) >= 0, (rec["src"], qid, t)
 
 
-def build(out_dir="data/mix", val_share=0.02, only=None):
+def build(out_dir="data/mix", val_share=0.02, only=None, sources=None):
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     counts = {}
     with open(out / "train.jsonl", "a" if only else "w") as tr, open(out / "val.jsonl", "a" if only else "w") as va:
-        for name, (fn, cap) in SOURCES.items():
+        for name, (fn, cap) in (sources or SOURCES).items():
             if only and name not in only:
                 continue
             rng = random.Random(f"{SEED}-{name}")
@@ -337,4 +453,7 @@ def build(out_dir="data/mix", val_share=0.02, only=None):
 
 if __name__ == "__main__":
     import sys
-    build(only=set(sys.argv[1:]) or None)
+    if sys.argv[1:2] == ["open"]:  # python -m onepass.build open -> data/mix-open
+        build("data/mix-open", sources=OPEN_SOURCES, only=set(sys.argv[2:]) or None)
+    else:
+        build(only=set(sys.argv[1:]) or None)

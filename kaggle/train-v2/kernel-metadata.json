@@ -1,0 +1,16 @@
+{
+  "id": "samadpls/onepass-train-v2",
+  "title": "onepass train v2",
+  "code_file": "train.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "samadpls/onepass-mix-v2"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "keywords": []
+}
