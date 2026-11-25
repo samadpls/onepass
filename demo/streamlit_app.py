@@ -156,7 +156,7 @@ CSS = f"""<style>
 .op-foot a {{ color: var(--blue) !important; }}
 </style>"""
 HERO = """<div class="op-hero"><div>
-  <div class="op-kicker">Qwen Local Hackathon 2026</div>
+  <div class="op-kicker">Open decision model</div>
   <div class="op-word">onepass</div>
   <div class="op-line">One pass. Every answer.</div>
   <div class="op-links"><a href="https://github.com/samadpls/onepass" target="_blank">GitHub</a><a
@@ -214,6 +214,6 @@ with right:
         with st.expander("Raw answer (JSON)"):
             st.json(answers)
 
-st.markdown('<div class="op-foot">Built by Abdul Samad (<a href="https://samadpls.com" target="_blank">samadpls.com</a>) '
-            "for the Qwen Local Hackathon 2026. On the benchmark it picks the wrong top answer about 2 times in 5, "
+st.markdown('<div class="op-foot">Built by Abdul Samad (<a href="https://samadpls.com" target="_blank">samadpls.com</a>)'
+            ". On the benchmark it picks the wrong top answer about 2 times in 5, "
             "so read the probabilities, not only the top label.</div>", unsafe_allow_html=True)
