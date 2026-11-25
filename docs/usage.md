@@ -46,8 +46,8 @@ model.ask(state, questions)  # {"refund": {"label": "true", "probabilities": {..
 ## Demo app
 
 [demo/streamlit_app.py](../demo/streamlit_app.py) is a small web app with five examples
-and editable questions. It runs the 8-bit 0.6B model on CPU. The live copy is at
-[onepassqwen3.streamlit.app](https://onepassqwen3.streamlit.app/), on Streamlit Community Cloud. To run it locally:
+and editable questions. It downloads the 8-bit 0.6B model once and runs it on your CPU.
+From the repo root:
 
 ```bash
 uv run --extra serve --with streamlit --with huggingface_hub streamlit run demo/streamlit_app.py

@@ -1,4 +1,4 @@
-"""onepass demo for Streamlit Community Cloud: typed questions about a text, answered as
+"""onepass demo web app (run locally with streamlit): typed questions about a text, answered as
 probabilities from one forward pass of the 8-bit 0.6B model on CPU."""
 import html
 import json
