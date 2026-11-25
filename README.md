@@ -47,48 +47,6 @@ The 8-bit file (639 MB for the 0.6B) gives almost the same answers as the 16-bit
 Results by question type, four held-out human-labelled sets, every file size, and what
 happens when the model writes its answers instead: [docs/results.md](https://github.com/samadpls/onepass/blob/main/docs/results.md).
 
-## How it got here
-
-**Today** onepass 1.7B scores 0.646 on the benchmark's 400 test cases, and the 0.6B
-scores 0.601. A baseline that ignores the input scores 0.481. The best small general
-model on the leaderboard (under 1B, never trained on the benchmark) scored 0.531, by the
-leaderboard's own number.
-
-**My first full model lost to that baseline.** I trained it for about 5 hours on a
-MacBook Pro (M3 Pro), on 16 human-labelled datasets. It scored 0.429.
-
-**Even getting that far was slow.** The laptop ran out of memory because gradient
-checkpointing was silently off: `from_pretrained` returns a model in eval mode. One
-line, `model.train()`, fixed it. When the battery got low, macOS slowed the run about
-four times. On Kaggle, asking for an L4 GPU silently gave me a CPU (PyTorch printed
-`2.11.0+cpu`), and the free 2×T4 queue held my run for over 2 hours.
-
-**I had trained it on the wrong kind of text.** The data was plain sentences: tweets,
-reviews, questions about passages. The benchmark is business records written as JSON:
-agent traces, invoices, security alerts, support threads.
-
-**The benchmark ships its own training split:** 1,200 cases of exactly that kind. I did
-not train on it, so the score stays honestly zero-shot.
-
-**Instead I went looking.** I found about 20 public datasets in the same typed-question
-format. I checked each one for its license, who made the labels, and overlap with the
-benchmark: exact matches, any shared 10-word run, identical questions. Most were
-dropped, for unclear licenses or for labels written by closed models whose terms may
-forbid training on them. Three passed:
-[n4ze3m/typed-decisions-synth](https://huggingface.co/datasets/n4ze3m/typed-decisions-synth) (MIT),
-[decisionmodels/sn92-specialists](https://huggingface.co/datasets/decisionmodels/sn92-specialists) (CC BY 4.0) and
-[tasksource/procedural-typed-decisions](https://huggingface.co/datasets/tasksource/procedural-typed-decisions) (Apache-2.0).
-In generated data the right answer was listed first 51% of the time, so I shuffle the
-options.
-
-**Then I trained again** on Kaggle's two free T4 GPUs, with the human data plus those
-three sets: 68,061 texts and 138,928 questions. The 0.6B took 4.5 hours and the 1.7B
-took 8.8, side by side. They scored 0.601 and 0.646.
-
-**It is not solved.** On SummEval, a held-out set about summary quality, training took
-the 0.6B from 0.504 down to 0.265. It answers "good" almost every time where experts
-said "excellent".
-
 ## Quick start
 
 With [uv](https://docs.astral.sh/uv/) and nothing else installed, download the 8-bit
@@ -128,7 +86,7 @@ The data, how it was cleaned, and the training setup: [docs/training.md](https:/
 |---|---|
 | [docs/results.md](https://github.com/samadpls/onepass/blob/main/docs/results.md) | Full benchmark results, held-out sets, GGUF sizes, generation baseline |
 | [docs/usage.md](https://github.com/samadpls/onepass/blob/main/docs/usage.md) | Server, HTTP API, Python, demo app, using it with only `transformers` |
-| [docs/training.md](https://github.com/samadpls/onepass/blob/main/docs/training.md) | Prompt layout, data sources, cleaning, LoRA training, calibration |
+| [docs/training.md](https://github.com/samadpls/onepass/blob/main/docs/training.md) | Prompt layout, data sources, cleaning, LoRA training, calibration, and how the first model failed |
 
 ## Credit
 
