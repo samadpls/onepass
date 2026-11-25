@@ -7,7 +7,7 @@ With [uv](https://docs.astral.sh/uv/) and nothing else installed, download the 8
 
 ```bash
 uvx --from huggingface_hub hf download samadpls/onepass-qwen3-0.6b-GGUF onepass-qwen3-0.6b-Q8_0.gguf --local-dir .
-uvx --from "onepass[serve] @ git+https://github.com/samadpls/onepass" onepass-serve onepass-qwen3-0.6b-Q8_0.gguf
+uvx --from "onepassai[serve]" onepass-serve onepass-qwen3-0.6b-Q8_0.gguf
 ```
 
 For the 1.7B, download `onepass-qwen3-1.7b-Q8_0.gguf` from
@@ -17,8 +17,10 @@ and add `--temperature 1.05`.
 To use it inside your own project:
 
 ```bash
-uv add "onepass[serve] @ git+https://github.com/samadpls/onepass"
+uv add "onepassai[serve]"
 ```
+
+Or with pip: `pip install "onepassai[serve]"`.
 
 Then open http://127.0.0.1:8000 for the demo page, or call the API:
 
@@ -34,7 +36,7 @@ curl -s http://127.0.0.1:8000/v1/systemone -d '{
 }'
 ```
 
-From Python:
+From Python (the package installs as `onepassai` and imports as `onepass`):
 
 ```python
 from onepass.model import Model
