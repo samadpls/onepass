@@ -11,9 +11,12 @@ The model is Qwen3-0.6B (or Qwen3-1.7B) with a LoRA adapter, trained on open
 datasets. It was never trained on the benchmark it is scored on.
 
 Built for the [Qwen Local Hackathon 2026](https://github.com/junaiddshaukat/finetune-anywhere).
-Models on Hugging Face: [onepass-qwen3-0.6b](https://huggingface.co/samadpls/onepass-qwen3-0.6b)
-and [onepass-qwen3-1.7b](https://huggingface.co/samadpls/onepass-qwen3-1.7b). Each has
-the transformers weights, 8-bit and 4-bit GGUF files, and the LoRA adapter.
+All models are in the [onepass collection](https://huggingface.co/collections/samadpls/onepass-6b06dee3eabd91e4de4df427) on Hugging Face:
+
+| Size | transformers | GGUF (llama.cpp) | LoRA adapter |
+|---|---|---|---|
+| 0.6B | [onepass-qwen3-0.6b](https://huggingface.co/samadpls/onepass-qwen3-0.6b) | [onepass-qwen3-0.6b-GGUF](https://huggingface.co/samadpls/onepass-qwen3-0.6b-GGUF) | [onepass-qwen3-0.6b-lora](https://huggingface.co/samadpls/onepass-qwen3-0.6b-lora) |
+| 1.7B | [onepass-qwen3-1.7b](https://huggingface.co/samadpls/onepass-qwen3-1.7b) | [onepass-qwen3-1.7b-GGUF](https://huggingface.co/samadpls/onepass-qwen3-1.7b-GGUF) | [onepass-qwen3-1.7b-lora](https://huggingface.co/samadpls/onepass-qwen3-1.7b-lora) |
 
 ## What it does
 
@@ -112,12 +115,12 @@ With [uv](https://docs.astral.sh/uv/) and nothing else installed, download the 8
 0.6B model and start the server:
 
 ```bash
-uvx --from huggingface_hub hf download samadpls/onepass-qwen3-0.6b onepass-qwen3-0.6b-q8_0.gguf --local-dir .
-uvx --from "onepass[serve] @ git+https://github.com/samadpls/onepass" onepass-serve onepass-qwen3-0.6b-q8_0.gguf
+uvx --from huggingface_hub hf download samadpls/onepass-qwen3-0.6b-GGUF onepass-qwen3-0.6b-Q8_0.gguf --local-dir .
+uvx --from "onepass[serve] @ git+https://github.com/samadpls/onepass" onepass-serve onepass-qwen3-0.6b-Q8_0.gguf
 ```
 
-For the 1.7B, download `onepass-qwen3-1.7b-q8_0.gguf` from
-[samadpls/onepass-qwen3-1.7b](https://huggingface.co/samadpls/onepass-qwen3-1.7b)
+For the 1.7B, download `onepass-qwen3-1.7b-Q8_0.gguf` from
+[samadpls/onepass-qwen3-1.7b-GGUF](https://huggingface.co/samadpls/onepass-qwen3-1.7b-GGUF)
 and add `--temperature 1.05`.
 
 To use it inside your own project:
@@ -145,7 +148,7 @@ From Python:
 ```python
 from onepass.model import Model
 
-model = Model("onepass-qwen3-0.6b-q8_0.gguf")  # temperature=1.05 for the 1.7B
+model = Model("onepass-qwen3-0.6b-Q8_0.gguf")  # temperature=1.05 for the 1.7B
 model.ask(state, questions)  # {"refund": {"label": "true", "probabilities": {...}}, ...}
 ```
 
