@@ -105,16 +105,16 @@ def render(questions, answers, ms):
         names = {str(i): f"{i} · {d}" for i, d in enumerate(q["criteria"])} if q["type"] == "score" else {}
         top = max(probs, key=probs.get)
         rows = "".join(
-            f'<div class="op-row{" op-top" if k == top else ""}"><span>{html.escape(names.get(k, k))}</span>'
+            f'<div class="op-row{" op-top" if k == top else ""}"{f" id=op-top-{html.escape(qid)}" if k == top else ""}><span>{html.escape(names.get(k, k))}</span>'
             f'<div class="op-track"><div class="op-fill" style="width:{max(p * 100, 1):.1f}%"></div></div>'
             f'<span class="op-pct">{p * 100:.0f}%</span></div>'
             for k, p in sorted(probs.items(), key=lambda kv: -kv[1]))
-        cards.append(f'<div class="op-q"><div class="op-kind">{html.escape(qid)} · {KIND[q["type"]]}</div>'
+        cards.append(f'<div class="op-q" id="op-q-{html.escape(qid)}"><div class="op-kind">{html.escape(qid)} · {KIND[q["type"]]}</div>'
                      f'<div class="op-ins">{html.escape(q["instructions"])}</div>{rows}</div>')
     n = len(answers)
     stats = (f'<div class="op-stats"><span><b>1</b>pass</span><span><b>0</b>generated tokens</span>'
              f'<span><b>{n}</b>answer{"s" if n != 1 else ""}</span><span><b>{ms:.0f}</b>ms on CPU</span></div>')
-    return stats + "".join(cards)
+    return stats, '<div id="op-answers">' + "".join(cards) + "</div>"
 
 
 FONTS = ("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800"
@@ -124,20 +124,25 @@ CSS = f"""<style>
 :root {{ --blue: #1d2cf3; --yellow: #ffc61a; --navy: #0f1452; --lav: #eef0fd; --bar: #e2e5fb; --muted: #5b6190; }}
 .stApp, .stApp p, .stApp label, .stApp li, .stApp button, .stApp input {{ font-family: "Geist", sans-serif; }}
 .stApp textarea {{ font-family: "Geist Mono", monospace; font-size: 13px; }}
-.block-container {{ padding-top: 3.6rem; max-width: 1280px; }}
-.op-hero {{ background: var(--blue); color: #fff; border-radius: 28px; padding: 34px 40px; display: grid;
-           grid-template-columns: 1fr 210px; align-items: center; gap: 24px; margin-bottom: 18px; }}
+.block-container {{ padding-top: 3.2rem; max-width: 1240px; }}
+.op-hero {{ background: var(--blue); color: #fff; border-radius: 24px; padding: 24px 34px; display: grid;
+           grid-template-columns: 1fr auto; align-items: center; gap: 24px; margin-bottom: 14px; }}
 .op-kicker {{ color: var(--yellow); font-weight: 600; letter-spacing: .16em; text-transform: uppercase; font-size: 14px; }}
-.op-word {{ font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 76px; line-height: .95;
+.op-word {{ font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 58px; line-height: .95;
            letter-spacing: -.035em; margin-top: 10px; }}
-.op-line {{ color: var(--yellow); font-size: 24px; font-weight: 500; margin-top: 12px; }}
-.op-links {{ margin-top: 18px; font-size: 15px; }}
+.op-line {{ color: var(--yellow); font-size: 20px; font-weight: 500; margin-top: 8px; }}
+.op-links {{ margin-top: 12px; font-size: 14px; }}
 .op-links a {{ color: #fff !important; text-decoration: none; border-bottom: 2px solid rgba(255, 255, 255, .35); margin-right: 18px; }}
 .op-links a:hover {{ border-color: var(--yellow); }}
-.op-hero svg {{ width: 100%; height: auto; }}
-@media (max-width: 760px) {{ .op-hero {{ grid-template-columns: 1fr; padding: 26px; }} .op-hero svg {{ display: none; }}
+.op-right {{ display: flex; align-items: center; gap: 18px; }}
+.op-right svg {{ width: 150px; height: auto; flex: none; }}
+.op-resp {{ background: var(--navy); border-radius: 16px; padding: 16px 20px; font-family: "Geist Mono", monospace; font-size: 17px;
+           font-weight: 500; display: grid; grid-template-columns: auto auto auto; column-gap: 14px; row-gap: 10px; }}
+.op-resp .k {{ color: #c9cdfd; }} .op-resp .v {{ color: var(--yellow); font-weight: 600; }} .op-resp .p {{ color: #fff; text-align: right; }}
+@media (max-width: 760px) {{ .op-hero {{ grid-template-columns: 1fr; padding: 26px; }} .op-right {{ display: none; }}
                             .op-word {{ font-size: 56px; }} }}
-.op-intro {{ color: var(--navy); font-size: 17px; margin: 6px 2px 10px; }}
+.op-intro {{ color: var(--muted); font-size: 16px; margin: 2px 2px 8px; }}
+.op-h {{ font-family: "Bricolage Grotesque", sans-serif; font-weight: 600; font-size: 20px; color: var(--navy); margin: 0 0 8px; }}
 .op-stats {{ display: flex; flex-wrap: wrap; gap: 2px 20px; align-items: baseline; color: var(--muted); font-size: 15px;
             margin: 4px 0 16px; }}
 .op-stats b {{ color: var(--blue); font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 30px;
@@ -152,7 +157,8 @@ CSS = f"""<style>
 .op-fill {{ height: 100%; border-radius: 6px; background: #9aa3f7; }}
 .op-top {{ font-weight: 600; }} .op-top .op-fill {{ background: var(--blue); }}
 .op-pct {{ text-align: right; font-family: "Geist Mono", monospace; font-size: 14px; }}
-.op-foot {{ color: var(--muted); font-size: 14px; margin-top: 28px; }}
+.op-foot {{ color: var(--muted); font-size: 13px; margin-top: 24px; }}
+[data-testid="stFormSubmitButton"] button {{ height: 68px; border-radius: 12px; font-size: 18px; font-weight: 600; }}
 .op-foot a {{ color: var(--blue) !important; }}
 </style>"""
 HERO = """<div class="op-hero"><div>
@@ -163,7 +169,7 @@ HERO = """<div class="op-hero"><div>
     href="https://huggingface.co/samadpls/onepass-qwen3-0.6b-GGUF" target="_blank">Model</a><a
     href="https://huggingface.co/collections/samadpls/onepass-6b06dee3eabd91e4de4df427" target="_blank">Collection</a></div>
 </div>
-<svg viewBox="0 0 560 520" aria-hidden="true">
+<div class="op-right"><svg viewBox="0 0 560 520" aria-hidden="true">
   <rect x="10" y="130" width="230" height="260" rx="28" fill="#fff"/>
   <g fill="#d9dcf5"><rect x="42" y="172" width="166" height="16" rx="8"/><rect x="42" y="208" width="138" height="16" rx="8"/>
     <rect x="42" y="244" width="160" height="16" rx="8"/><rect x="42" y="280" width="110" height="16" rx="8"/>
@@ -171,49 +177,63 @@ HERO = """<div class="op-hero"><div>
   <circle cx="400" cy="260" r="82" fill="none" stroke="#fff" stroke-width="22"/>
   <path d="M262 260 H508" stroke="#ffc61a" stroke-width="22" stroke-linecap="round"/>
   <path d="M482 228 L520 260 L482 292" fill="none" stroke="#ffc61a" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
-</svg></div>"""
+</svg>
+<div class="op-resp"><span class="k">refund</span><span class="v">true</span><span class="p">0.96</span><span class="k">team</span><span class="v">billing</span><span class="p">0.98</span></div></div></div>"""
 
 
 def use_example():
-    state, questions = EXAMPLES[st.session_state.example]
+    name = st.session_state.example
+    if name is None:   # clicking the selected example again would clear it: keep the current one
+        st.session_state.example = st.session_state.shown
+        return
+    st.session_state.shown = name
+    state, questions = EXAMPLES[name]
     st.session_state.state, st.session_state.questions = as_text(state), as_text(questions)
+
+
+def shown_json(answers):
+    """The response as a client receives it, with probabilities rounded for reading."""
+    return json.dumps({qid: {"label": a["label"], "probabilities": {k: round(v, 2) for k, v in a["probabilities"].items()}}
+                       for qid, a in answers.items()}, indent=2, ensure_ascii=False)
 
 
 st.set_page_config(page_title="onepass", page_icon="https://raw.githubusercontent.com/samadpls/onepass/main/assets/logo.png",
                    layout="wide")
 st.markdown(CSS, unsafe_allow_html=True)
 st.markdown(HERO, unsafe_allow_html=True)
-st.markdown('<div class="op-intro">Ask typed questions about a text: <b>yes/no</b>, <b>choose one</b> or '
-            "<b>pick a level</b>. The 8-bit Qwen3-0.6B fine-tune returns a probability for every option, for all "
-            "questions at once, from one forward pass. Nothing is generated, so the JSON it returns is always "
-            "complete and valid.</div>", unsafe_allow_html=True)
+st.markdown('<div class="op-intro">Typed questions in, a probability for every answer out. '
+            "One forward pass, nothing generated.</div>", unsafe_allow_html=True)
 
 if "state" not in st.session_state:
     st.session_state.example = next(iter(EXAMPLES))
     use_example()
-st.radio("Example", list(EXAMPLES), key="example", horizontal=True, on_change=use_example)
+st.segmented_control("Example", list(EXAMPLES), key="example", on_change=use_example, label_visibility="collapsed")
 
-left, right = st.columns(2, gap="large")
-with left, st.form("ask", border=False):
-    st.text_area("State (plain text or JSON)", key="state", height=130)
-    st.text_area("Questions (JSON)", key="questions", height=400)
-    st.form_submit_button("Ask", type="primary", use_container_width=True)
+with st.form("ask", border=False):
+    text_col, ask_col = st.columns([7, 1], vertical_alignment="bottom")
+    text_col.text_area("Text (plain or JSON)", key="state", height=90)
+    ask_col.form_submit_button("Ask", type="primary", use_container_width=True)
+    with st.expander("Questions (JSON): edit them to ask your own"):
+        st.text_area("Questions (JSON)", key="questions", height=320, label_visibility="collapsed")
 
-with right:
-    try:
-        state, questions = parse(st.session_state.state, st.session_state.questions)
-        model, lock = load()
-        with lock:
-            t = time.perf_counter()
-            answers = model.ask(state, questions)
-            ms = (time.perf_counter() - t) * 1000
-    except ValueError as e:
-        st.error(str(e))
-    else:
-        st.markdown(render(questions, answers, ms), unsafe_allow_html=True)
-        with st.expander("Raw answer (JSON)"):
-            st.json(answers)
+try:
+    state, questions = parse(st.session_state.state, st.session_state.questions)
+    model, lock = load()
+    with lock:
+        t = time.perf_counter()
+        answers = model.ask(state, questions)
+        ms = (time.perf_counter() - t) * 1000
+except ValueError as e:
+    st.error(str(e))
+else:
+    stats, cards = render(questions, answers, ms)
+    st.markdown(stats, unsafe_allow_html=True)
+    answers_col, json_col = st.columns(2, gap="large")
+    with answers_col:
+        st.markdown('<div class="op-h">Answers</div>' + cards, unsafe_allow_html=True)
+    with json_col:
+        st.markdown('<div class="op-h">JSON response</div>', unsafe_allow_html=True)
+        st.code(shown_json(answers), language="json")
 
-st.markdown('<div class="op-foot">Built by Abdul Samad (<a href="https://samadpls.com" target="_blank">samadpls.com</a>)'
-            ". On the benchmark it picks the wrong top answer about 2 times in 5, "
-            "so read the probabilities, not only the top label.</div>", unsafe_allow_html=True)
+st.markdown('<div class="op-foot">Built by Abdul Samad (<a href="https://samadpls.com" target="_blank">samadpls.com</a>). '
+            "The top answer is wrong about 2 times in 5, so read the probabilities too.</div>", unsafe_allow_html=True)
