@@ -1,0 +1,15 @@
+[theme]
+base = "light"
+primaryColor = "#1d2cf3"
+backgroundColor = "#eef0fd"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#0f1452"
+font = "Geist:https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap"
+headingFont = "Bricolage Grotesque:https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap"
+codeFont = "Geist Mono:https://fonts.googleapis.com/css2?family=Geist+Mono:wght@500&display=swap"
+
+[client]
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
