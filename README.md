@@ -11,7 +11,9 @@ The model is Qwen3-0.6B (or Qwen3-1.7B) with a LoRA adapter, trained on open
 datasets. It was never trained on the benchmark it is scored on.
 
 Built for the [Qwen Local Hackathon 2026](https://github.com/junaiddshaukat/finetune-anywhere).
-The model files are not published yet.
+Models on Hugging Face: [onepass-qwen3-0.6b](https://huggingface.co/samadpls/onepass-qwen3-0.6b)
+and [onepass-qwen3-1.7b](https://huggingface.co/samadpls/onepass-qwen3-1.7b). Each has
+the transformers weights, 8-bit and 4-bit GGUF files, and the LoRA adapter.
 
 ## What it does
 
@@ -68,6 +70,10 @@ Four public sets that the model never saw in training, turned into typed questio
 Accuracy is mixed. The probabilities improve on every set: KL from gold falls
 for both models on all four (for example CondaQA 1.31 → 0.92 for the 0.6B).
 
+On SummEval the 0.6B answers "good" almost every time. The experts rated most
+summaries "excellent" for consistency and fluency, so its accuracy falls there,
+but 87% of its answers are within one level of theirs.
+
 ### Smaller files
 
 The same benchmark, run through llama.cpp with each GGUF file. "Shift" is how
@@ -102,11 +108,17 @@ answer for each of the 400 test cases:
 
 ## Run it locally
 
-With [uv](https://docs.astral.sh/uv/), one command runs the server, with nothing to install first:
+With [uv](https://docs.astral.sh/uv/) and nothing else installed, download the 8-bit
+0.6B model and start the server:
 
 ```bash
-uvx --from "onepass[serve] @ git+https://github.com/samadpls/onepass" onepass-serve path/to/onepass.gguf
+uvx --from huggingface_hub hf download samadpls/onepass-qwen3-0.6b onepass-qwen3-0.6b-q8_0.gguf --local-dir .
+uvx --from "onepass[serve] @ git+https://github.com/samadpls/onepass" onepass-serve onepass-qwen3-0.6b-q8_0.gguf
 ```
+
+For the 1.7B, download `onepass-qwen3-1.7b-q8_0.gguf` from
+[samadpls/onepass-qwen3-1.7b](https://huggingface.co/samadpls/onepass-qwen3-1.7b)
+and add `--temperature 1.05`.
 
 To use it inside your own project:
 
@@ -133,7 +145,7 @@ From Python:
 ```python
 from onepass.model import Model
 
-model = Model("onepass.gguf")
+model = Model("onepass-qwen3-0.6b-q8_0.gguf")  # temperature=1.05 for the 1.7B
 model.ask(state, questions)  # {"refund": {"label": "true", "probabilities": {...}}, ...}
 ```
 
@@ -148,8 +160,8 @@ import json
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-MODEL = "samadpls/onepass-qwen3-0.6b"  # not published yet
-TEMPERATURE = 1.0  # the calibration temperature from the model card
+MODEL = "samadpls/onepass-qwen3-0.6b"
+TEMPERATURE = 1.0  # the calibration temperature: 1.0 for the 0.6B, 1.05 for the 1.7B
 SYSTEM = "You are a decision model. Read the state, then answer every question with the letter of one option."
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 KIND = {"noul": "true or false", "choice": "choose one", "score": "pick a level"}
@@ -188,7 +200,7 @@ letters = [tok.encode(" " + L, add_special_tokens=False)[0] for L in LETTERS]
 with torch.no_grad():
     logits = model(torch.tensor([ids])).logits[0]  # one forward pass, nothing generated
 for qid, (pos, labels) in slots.items():
-    p = (logits[pos, letters[: len(labels)]] / TEMPERATURE).softmax(-1)
+    p = (logits[pos, letters[: len(labels)]].float() / TEMPERATURE).softmax(-1)
     print(qid, dict(zip(labels, p.tolist())))
 ```
 
@@ -198,8 +210,6 @@ Three rules keep it working:
 - Use at most 26 options per question.
 
 This `build_prompt` produces exactly the same token ids as `onepass.prompt.render`. We checked all 2,530 prompts in the benchmark sample and our validation set.
-
-The model file is not published yet.
 
 ## How it works
 
