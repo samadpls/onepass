@@ -1190,7 +1190,7 @@ wheels = [
 ]
 
 [[package]]
-name = "onepass"
+name = "onepassai"
 version = "0.1.0"
 source = { editable = "." }
 

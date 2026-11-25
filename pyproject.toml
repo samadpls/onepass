@@ -1,5 +1,5 @@
 [project]
-name = "onepass"
+name = "onepassai"
 version = "0.1.0"
 description = "A tiny open decision model: typed yes/no, choice and score answers with calibrated probabilities from one forward pass."
 readme = "README.md"
@@ -8,6 +8,12 @@ authors = [
 ]
 requires-python = ">=3.11"
 license = "Apache-2.0"
+keywords = ["llm", "decision-model", "classification", "calibration", "lora", "qwen3", "llama-cpp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = []
 
 [project.optional-dependencies]
@@ -20,10 +26,16 @@ onepass-serve = "onepass.serve:main"
 [project.urls]
 Homepage = "https://github.com/samadpls/onepass"
 Author = "https://samadpls.com"
+Repository = "https://github.com/samadpls/onepass"
+Documentation = "https://github.com/samadpls/onepass/tree/main/docs"
+"Hugging Face" = "https://huggingface.co/collections/samadpls/onepass-6b06dee3eabd91e4de4df427"
 
 [build-system]
 requires = ["uv_build>=0.12.2,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "onepass"
 
 [dependency-groups]
 dev = ["pytest"]
