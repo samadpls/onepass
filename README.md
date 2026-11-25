@@ -10,6 +10,10 @@ forward pass. It generates no tokens, so the output can never be malformed.
 The model is Qwen3-0.6B (or Qwen3-1.7B) with a LoRA adapter, trained on open
 datasets. It was never trained on the benchmark it is scored on.
 
+[![Watch the 90-second demo](https://raw.githubusercontent.com/samadpls/onepass/main/assets/demo-thumbnail.png)](https://www.youtube.com/watch?v=ZZR8TRsX1h4)
+
+**Watch the demo (90 seconds):** [youtube.com/watch?v=ZZR8TRsX1h4](https://www.youtube.com/watch?v=ZZR8TRsX1h4)
+
 All models are in the [onepass collection](https://huggingface.co/collections/samadpls/onepass-6b06dee3eabd91e4de4df427) on Hugging Face:
 
 | Size | transformers | GGUF (llama.cpp) | LoRA adapter |
