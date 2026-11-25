@@ -12,9 +12,6 @@ from onepass.model import Model
 from onepass.prompt import KIND, options
 
 REPO, FILE = "samadpls/onepass-qwen3-0.6b-GGUF", "onepass-qwen3-0.6b-Q8_0.gguf"
-LINKS = ("[GitHub](https://github.com/samadpls/onepass) · "
-         "[Model](https://huggingface.co/samadpls/onepass-qwen3-0.6b-GGUF) · "
-         "[Collection](https://huggingface.co/collections/samadpls/onepass-6b06dee3eabd91e4de4df427)")
 
 EXAMPLES = {
     "Support message": ("My card was charged twice for one order. Please refund the extra charge today.", {
@@ -45,6 +42,12 @@ EXAMPLES = {
                                    "negative": "Mostly unhappy."}},
         "urgency": {"type": "score", "instructions": "How urgently should the team reply?",
                     "criteria": ["not urgent", "soon", "today", "right now"]},
+    }),
+    "Agent tool choice": ({"user": "Book me something from Karachi to Dubai on 12 December, cheapest please."}, {
+        "tool": {"type": "choice", "instructions": "Which tool should the assistant call next?",
+                 "criteria": {"get_weather": "Current weather or forecast for a city.",
+                              "search_flights": "Find flights between two cities on a date.",
+                              "send_email": "Send an email to someone.", "none": "No tool is needed; just reply."}},
     }),
     "Order record (JSON)": ({"order_id": "A-1042", "status": "delivered", "days_since_delivery": 41,
                              "return_window_days": 30, "item": "headphones",
@@ -109,23 +112,66 @@ def render(questions, answers, ms):
         cards.append(f'<div class="op-q"><div class="op-kind">{html.escape(qid)} · {KIND[q["type"]]}</div>'
                      f'<div class="op-ins">{html.escape(q["instructions"])}</div>{rows}</div>')
     n = len(answers)
-    stats = (f'<div class="op-stats"><b>1</b> forward pass <b>0</b> generated tokens '
-             f'<b>{n}</b> answer{"s" if n != 1 else ""} <b>{ms:.0f} ms</b> on CPU</div>')
+    stats = (f'<div class="op-stats"><span><b>1</b>pass</span><span><b>0</b>generated tokens</span>'
+             f'<span><b>{n}</b>answer{"s" if n != 1 else ""}</span><span><b>{ms:.0f}</b>ms on CPU</span></div>')
     return stats + "".join(cards)
 
 
-CSS = """<style>
-.op-stats { margin-bottom: 14px; opacity: .75; }
-.op-stats b { margin: 0 4px 0 10px; } .op-stats b:first-child { margin-left: 0; }
-.op-q { border: 1px solid rgba(127, 127, 127, .35); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
-.op-kind { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; opacity: .65; }
-.op-ins { font-weight: 600; margin: 4px 0 8px; }
-.op-row { display: grid; grid-template-columns: minmax(90px, 38%) 1fr 48px; gap: 10px; align-items: center; margin-top: 6px; }
-.op-track { height: 10px; border-radius: 5px; background: rgba(127, 127, 127, .2); overflow: hidden; }
-.op-fill { height: 100%; border-radius: 5px; background: #9aa3f7; }
-.op-top { font-weight: 600; } .op-top .op-fill { background: #1d2cf3; }
-.op-pct { text-align: right; font-variant-numeric: tabular-nums; }
+FONTS = ("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800"
+         "&family=Geist:wght@400;500;600&family=Geist+Mono:wght@500&display=swap")
+CSS = f"""<style>
+@import url('{FONTS}');
+:root {{ --blue: #1d2cf3; --yellow: #ffc61a; --navy: #0f1452; --lav: #eef0fd; --bar: #e2e5fb; --muted: #5b6190; }}
+.stApp, .stApp p, .stApp label, .stApp li, .stApp button, .stApp input {{ font-family: "Geist", sans-serif; }}
+.stApp textarea {{ font-family: "Geist Mono", monospace; font-size: 13px; }}
+.block-container {{ padding-top: 3.6rem; max-width: 1280px; }}
+.op-hero {{ background: var(--blue); color: #fff; border-radius: 28px; padding: 34px 40px; display: grid;
+           grid-template-columns: 1fr 210px; align-items: center; gap: 24px; margin-bottom: 18px; }}
+.op-kicker {{ color: var(--yellow); font-weight: 600; letter-spacing: .16em; text-transform: uppercase; font-size: 14px; }}
+.op-word {{ font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 76px; line-height: .95;
+           letter-spacing: -.035em; margin-top: 10px; }}
+.op-line {{ color: var(--yellow); font-size: 24px; font-weight: 500; margin-top: 12px; }}
+.op-links {{ margin-top: 18px; font-size: 15px; }}
+.op-links a {{ color: #fff !important; text-decoration: none; border-bottom: 2px solid rgba(255, 255, 255, .35); margin-right: 18px; }}
+.op-links a:hover {{ border-color: var(--yellow); }}
+.op-hero svg {{ width: 100%; height: auto; }}
+@media (max-width: 760px) {{ .op-hero {{ grid-template-columns: 1fr; padding: 26px; }} .op-hero svg {{ display: none; }}
+                            .op-word {{ font-size: 56px; }} }}
+.op-intro {{ color: var(--navy); font-size: 17px; margin: 6px 2px 10px; }}
+.op-stats {{ display: flex; flex-wrap: wrap; gap: 2px 20px; align-items: baseline; color: var(--muted); font-size: 15px;
+            margin: 4px 0 16px; }}
+.op-stats b {{ color: var(--blue); font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 30px;
+              margin-right: 6px; }}
+.op-q {{ background: #fff; border-radius: 22px; padding: 20px 24px; margin-bottom: 14px; }}
+.op-kind {{ font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }}
+.op-ins {{ font-family: "Bricolage Grotesque", sans-serif; font-weight: 600; font-size: 21px; color: var(--navy);
+          margin: 4px 0 10px; }}
+.op-row {{ display: grid; grid-template-columns: minmax(90px, 38%) 1fr 52px; gap: 14px; align-items: center;
+          margin-top: 8px; color: var(--navy); }}
+.op-track {{ height: 12px; border-radius: 6px; background: var(--bar); overflow: hidden; }}
+.op-fill {{ height: 100%; border-radius: 6px; background: #9aa3f7; }}
+.op-top {{ font-weight: 600; }} .op-top .op-fill {{ background: var(--blue); }}
+.op-pct {{ text-align: right; font-family: "Geist Mono", monospace; font-size: 14px; }}
+.op-foot {{ color: var(--muted); font-size: 14px; margin-top: 28px; }}
+.op-foot a {{ color: var(--blue) !important; }}
 </style>"""
+HERO = """<div class="op-hero"><div>
+  <div class="op-kicker">Qwen Local Hackathon 2026</div>
+  <div class="op-word">onepass</div>
+  <div class="op-line">One pass. Every answer.</div>
+  <div class="op-links"><a href="https://github.com/samadpls/onepass" target="_blank">GitHub</a><a
+    href="https://huggingface.co/samadpls/onepass-qwen3-0.6b-GGUF" target="_blank">Model</a><a
+    href="https://huggingface.co/collections/samadpls/onepass-6b06dee3eabd91e4de4df427" target="_blank">Collection</a></div>
+</div>
+<svg viewBox="0 0 560 520" aria-hidden="true">
+  <rect x="10" y="130" width="230" height="260" rx="28" fill="#fff"/>
+  <g fill="#d9dcf5"><rect x="42" y="172" width="166" height="16" rx="8"/><rect x="42" y="208" width="138" height="16" rx="8"/>
+    <rect x="42" y="244" width="160" height="16" rx="8"/><rect x="42" y="280" width="110" height="16" rx="8"/>
+    <rect x="42" y="316" width="150" height="16" rx="8"/><rect x="42" y="352" width="90" height="16" rx="8"/></g>
+  <circle cx="400" cy="260" r="82" fill="none" stroke="#fff" stroke-width="22"/>
+  <path d="M262 260 H508" stroke="#ffc61a" stroke-width="22" stroke-linecap="round"/>
+  <path d="M482 228 L520 260 L482 292" fill="none" stroke="#ffc61a" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+</svg></div>"""
 
 
 def use_example():
@@ -133,12 +179,14 @@ def use_example():
     st.session_state.state, st.session_state.questions = as_text(state), as_text(questions)
 
 
-st.set_page_config(page_title="onepass", layout="wide")
+st.set_page_config(page_title="onepass", page_icon="https://raw.githubusercontent.com/samadpls/onepass/main/assets/logo.png",
+                   layout="wide")
 st.markdown(CSS, unsafe_allow_html=True)
-st.title("onepass")
-st.markdown("Ask typed questions about a text: **yes/no**, **choose one**, or **pick a level**. The model returns a "
-            "probability for every option, for all questions at once, from one forward pass. Nothing is generated, "
-            f"so the answer can never be malformed.\n\n{LINKS} · 8-bit Qwen3-0.6B fine-tune, running on a free CPU")
+st.markdown(HERO, unsafe_allow_html=True)
+st.markdown('<div class="op-intro">Ask typed questions about a text: <b>yes/no</b>, <b>choose one</b> or '
+            "<b>pick a level</b>. The 8-bit Qwen3-0.6B fine-tune returns a probability for every option, for all "
+            "questions at once, from one forward pass. Nothing is generated, so the JSON it returns is always "
+            "complete and valid.</div>", unsafe_allow_html=True)
 
 if "state" not in st.session_state:
     st.session_state.example = next(iter(EXAMPLES))
@@ -165,3 +213,7 @@ with right:
         st.markdown(render(questions, answers, ms), unsafe_allow_html=True)
         with st.expander("Raw answer (JSON)"):
             st.json(answers)
+
+st.markdown('<div class="op-foot">Built by Abdul Samad (<a href="https://samadpls.com" target="_blank">samadpls.com</a>) '
+            "for the Qwen Local Hackathon 2026. On the benchmark it picks the wrong top answer about 2 times in 5, "
+            "so read the probabilities, not only the top label.</div>", unsafe_allow_html=True)

@@ -11,6 +11,9 @@ The model is Qwen3-0.6B (or Qwen3-1.7B) with a LoRA adapter, trained on open
 datasets. It was never trained on the benchmark it is scored on.
 
 Built for the [Qwen Local Hackathon 2026](https://github.com/junaiddshaukat/finetune-anywhere).
+**Try it in the browser:** [onepassqwen3.streamlit.app](https://onepassqwen3.streamlit.app/)
+(free CPU; the first visit wakes the app up).
+
 All models are in the [onepass collection](https://huggingface.co/collections/samadpls/onepass-6b06dee3eabd91e4de4df427) on Hugging Face:
 
 | Size | transformers | GGUF (llama.cpp) | LoRA adapter |
@@ -154,9 +157,9 @@ model.ask(state, questions)  # {"refund": {"label": "true", "probabilities": {..
 
 ### Demo app
 
-[demo/streamlit_app.py](demo/streamlit_app.py) is a small web app with four examples
-and editable questions. It runs the 8-bit 0.6B model on CPU, and the same folder deploys
-as-is to Streamlit Community Cloud. To run it locally:
+[demo/streamlit_app.py](demo/streamlit_app.py) is a small web app with five examples
+and editable questions. It runs the 8-bit 0.6B model on CPU. The live copy is at
+[onepassqwen3.streamlit.app](https://onepassqwen3.streamlit.app/), on Streamlit Community Cloud. To run it locally:
 
 ```bash
 uv run --extra serve --with streamlit --with huggingface_hub streamlit run demo/streamlit_app.py
