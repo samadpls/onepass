@@ -1,6 +1,6 @@
 [project]
 name = "onepassai"
-version = "0.1.0"
+version = "0.1.1"
 description = "A tiny open decision model: typed yes/no, choice and score answers with calibrated probabilities from one forward pass."
 readme = "README.md"
 authors = [
