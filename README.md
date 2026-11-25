@@ -7,24 +7,86 @@ questions: yes/no, choose one option, or pick a level on a scale. It returns a
 probability for every possible answer, for all questions at once, from a single
 forward pass. It generates no tokens, so the output can never be malformed.
 
-The model is a small Qwen3 with a LoRA adapter, trained only on open datasets
-labelled by people.
+The model is Qwen3-0.6B (or Qwen3-1.7B) with a LoRA adapter, trained on open
+datasets. It was never trained on the benchmark it is scored on.
 
-## Status
+Built for the [Qwen Local Hackathon 2026](https://github.com/junaiddshaukat/finetune-anywhere).
+The model files are not published yet.
 
-Work in progress for the [Qwen Local Hackathon 2026](https://github.com/junaiddshaukat/finetune-anywhere).
-Results go here once they are measured.
+## What it does
 
-Measured so far, on the 400-case test split of
+![A support message, two questions, and the answer probabilities onepass returned](https://raw.githubusercontent.com/samadpls/onepass/main/assets/example.png)
+
+The probabilities above are the real output of the 8-bit 0.6B model for this message.
+Every question gets a probability for each of its options, read from one forward pass.
+
+## Results
+
+Scored on the 400-case test split of
 [LocalLLaMA/typed-decisions](https://huggingface.co/datasets/LocalLLaMA/typed-decisions)
-(2,000 decisions, scored with the benchmark's own formulas):
+(2,000 decisions), with the formulas from the benchmark's own scoring script.
+Accuracy: higher is better. KL from gold, Brier and ECE: lower is better.
 
 | Model | Accuracy | KL from gold | Brier | ECE |
 |---|---|---|---|---|
 | Qwen3-0.6B, no fine-tuning | 0.311 | 0.888 | 0.428 | 0.306 |
-| Prior: label frequencies, ignores the input | 0.481 | 0.327 | 0.181 | 0.036 |
+| Qwen3-1.7B, no fine-tuning | 0.278 | 1.914 | 0.812 | 0.611 |
+| Label frequencies from the benchmark's train split (ignores the input) | 0.481 | 0.327 | 0.181 | **0.036** |
+| **onepass 0.6B** | 0.601 | 0.270 | 0.154 | 0.049 |
+| **onepass 1.7B** | **0.646** | **0.236** | **0.129** | 0.076 |
 
-The fine-tuned model is training now. Its scores go here when they are measured.
+<details>
+<summary>Accuracy by question type and by workflow</summary>
+
+| | onepass 0.6B | onepass 1.7B |
+|---|---|---|
+| Yes/no | 0.737 | 0.755 |
+| Choose one | 0.518 | 0.605 |
+| Pick a level | 0.561 | 0.594 |
+| Agent traces | 0.564 | 0.574 |
+| Customer service | 0.630 | 0.686 |
+| Invoices | 0.614 | 0.654 |
+| Security incidents | 0.596 | 0.668 |
+
+</details>
+
+An earlier 0.6B run, trained only on the human-labelled datasets, scored 0.429:
+below the label-frequency baseline. Adding the three open typed-question datasets
+(see [How it was trained](#how-it-was-trained)) raised it to 0.601.
+
+### Held-out human-labelled sets
+
+Four public sets that the model never saw in training, turned into typed questions.
+
+| Set | Always the most common answer | 0.6B before → after | 1.7B before → after |
+|---|---|---|---|
+| CondaQA (negation, yes/no) | 0.483 | 0.455 → 0.563 | 0.495 → 0.476 |
+| Cosmos QA (common sense, choose one) | 0.260 | 0.282 → 0.373 | 0.529 → 0.506 |
+| SummEval (summary quality, pick a level) | 0.651 | 0.504 → 0.265 | 0.073 → 0.376 |
+| RAGTruth (is the answer supported?, yes/no) | 0.768 | 0.704 → 0.752 | 0.476 → 0.760 |
+
+Accuracy is mixed. The probabilities improve on every set: KL from gold falls
+for both models on all four (for example CondaQA 1.31 → 0.92 for the 0.6B).
+
+### Smaller files
+
+The same benchmark, run through llama.cpp with each GGUF file. "Shift" is how
+far each answer probability moves from the 16-bit file, on average.
+
+| Model | File | Size | Accuracy | KL from gold | Brier | ECE | Shift | Time per case |
+|---|---|---|---|---|---|---|---|---|
+| 0.6B | 16-bit | 1,198 MB | 0.601 | 0.270 | 0.154 | 0.048 | | 180 ms |
+| 0.6B | **8-bit** | 639 MB | 0.605 | 0.270 | 0.154 | 0.054 | 0.004 | 185 ms |
+| 0.6B | 4-bit (Q4_K_M) | 397 MB | 0.603 | 0.268 | 0.153 | 0.064 | 0.030 | 191 ms |
+| 1.7B | 16-bit | 3,447 MB | 0.645 | 0.236 | 0.129 | 0.076 | | 418 ms |
+| 1.7B | **8-bit** | 1,834 MB | 0.650 | 0.235 | 0.128 | 0.080 | 0.003 | 432 ms |
+| 1.7B | 4-bit (Q4_K_M) | 1,107 MB | 0.632 | 0.237 | 0.131 | 0.073 | 0.028 | 478 ms |
+
+8-bit halves the file and changes almost nothing. 4-bit keeps the scores close,
+but single answers can move a lot (up to 0.22 for the 0.6B and 0.29 for the
+1.7B). Use 8-bit when the exact probabilities matter. Times are medians on a
+MacBook Pro (M3 Pro) GPU. For prompts this short, the smaller files save memory
+but are not faster.
 
 ### Why read answers instead of generating them
 
@@ -163,14 +225,47 @@ The model file is not published yet.
 | GGUF export and quantization | [src/onepass/export.py](src/onepass/export.py) |
 | Local runtime, server and demo page | [src/onepass/model.py](src/onepass/model.py), [src/onepass/serve.py](src/onepass/serve.py) |
 
-## Training data
+## How it was trained
 
-16 open, human-labelled datasets turned into typed questions: about 87,000 texts and
-157,000 questions. Sources include BoolQ, UNLI, MultiNLI, WANLI, Civil Comments,
-PAWS, VitaminC, SMS Spam, Banking77, CLINC150, DBpedia, the Davidson hate-speech
-set, GoEmotions, Measuring Hate Speech, HelpSteer2 and BRIGHTER.
-See [src/onepass/build.py](src/onepass/build.py). The model is never trained on
-typed-decisions.
+### Data
+
+68,061 texts with 138,928 questions, from two kinds of open data. We wrote no
+training examples ourselves; [src/onepass/build.py](src/onepass/build.py) turns
+existing datasets into typed questions.
+
+| Part | Texts | What it is |
+|---|---|---|
+| 16 human-labelled datasets | 40,000 (sampled from 86,871) | BoolQ, UNLI, MultiNLI, WANLI, Civil Comments, PAWS, VitaminC, SMS Spam, Banking77, CLINC150, DBpedia, the Davidson hate-speech set, GoEmotions, Measuring Hate Speech, HelpSteer2 and BRIGHTER. Where several people rated a text, the target is the share of raters who chose each answer. |
+| [n4ze3m/typed-decisions-synth](https://huggingface.co/datasets/n4ze3m/typed-decisions-synth) | 6,523 | Typed questions with probability labels from DeepSeek V4.1 Flash (MIT). |
+| [decisionmodels/sn92-specialists](https://huggingface.co/datasets/decisionmodels/sn92-specialists) | 12,730 | Typed questions labelled by open-weight models and exact rules (CC BY 4.0). |
+| [tasksource/procedural-typed-decisions](https://huggingface.co/datasets/tasksource/procedural-typed-decisions) | 8,808 | Typed questions whose answers follow from exact rules (Apache-2.0). |
+
+Before using the three typed-question datasets we checked each one's license and
+who made its labels. We also compared every text with the benchmark's 1,600
+train and test cases: exact matches, any shared 10-word run, and identical
+questions. We found no overlap. We also drop records that look like the
+benchmark's own four workflows.
+
+```bash
+uv run python -m onepass.build        # human-labelled datasets -> data/mix
+uv run python -m onepass.build open   # typed-question datasets -> data/mix-open
+uv run python -m onepass.build v2     # the training mix above -> data/mix-v2
+```
+
+### Training
+
+- **LoRA on every linear layer.** The Qwen weights stay frozen. Small trainable
+  matrices (rank 32) are added to the attention layers (`q_proj`, `k_proj`,
+  `v_proj`, `o_proj`) and the feed-forward layers (`gate_proj`, `up_proj`,
+  `down_proj`) of all 28 blocks: 20M trainable weights for the 0.6B, 35M for the
+  1.7B.
+- **Loss only at the answer slots.** The model is scored only on the answer letter after each
+  `Answer:`, against the target probabilities. The rest of the prompt is not trained on.
+- **One pass over the data,** learning rate 2e-4 with a cosine schedule, on two
+  free Kaggle T4 GPUs: 4.5 hours for the 0.6B, 8.8 hours for the 1.7B, side by
+  side. Notebook: [kaggle/train-v2/train.ipynb](kaggle/train-v2/train.ipynb).
+- **Calibration.** One temperature is fitted on our own validation set, never on
+  the benchmark: 1.0 for the 0.6B, 1.05 for the 1.7B.
 
 ## Credit
 

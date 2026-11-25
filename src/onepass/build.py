@@ -451,9 +451,24 @@ def build(out_dir="data/mix", val_share=0.02, only=None, sources=None):
     return counts
 
 
+def combine(human="data/mix", open_="data/mix-open", out_dir="data/mix-v2", n_human=40000):
+    """The training mix of the released models: a seeded sample of the human mix plus all open records."""
+    rng = random.Random(0)
+    lines = lambda d, split: (Path(d) / f"{split}.jsonl").read_text().splitlines(keepends=True)
+    train = rng.sample(lines(human, "train"), n_human) + lines(open_, "train")
+    rng.shuffle(train)
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "train.jsonl").write_text("".join(train))
+    (out / "val.jsonl").write_text("".join(lines(human, "val") + lines(open_, "val")))
+    return len(train)
+
+
 if __name__ == "__main__":
     import sys
     if sys.argv[1:2] == ["open"]:  # python -m onepass.build open -> data/mix-open
         build("data/mix-open", sources=OPEN_SOURCES, only=set(sys.argv[2:]) or None)
+    elif sys.argv[1:2] == ["v2"]:  # python -m onepass.build v2 -> data/mix-v2
+        print(combine())
     else:
         build(only=set(sys.argv[1:]) or None)

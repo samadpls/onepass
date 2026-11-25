@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --blue:#1d2cf3; --navy:#0f1452; --yellow:#ffc61a; --lav:#eef0fd; --bar:#e2e5fb; --muted:#5b6190; }
+  * { box-sizing:border-box; margin:0; }
+  body { width:1600px; height:500px; overflow:hidden; background:var(--lav); color:var(--navy); font-family:"Geist",sans-serif;
+         display:grid; grid-template-columns:560px 1fr; gap:64px; align-items:center; padding:0 88px; }
+  .label { font-size:17px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+  .state { font-size:30px; line-height:1.4; background:#fff; border-radius:26px; padding:30px 34px; margin-top:14px; }
+  .pass { margin-top:40px; display:flex; gap:36px; font-size:21px; color:var(--muted); }
+  .pass b { color:var(--blue); font-family:"Bricolage Grotesque",sans-serif; font-size:44px; font-weight:800; margin-right:8px; }
+  .card { background:#fff; border-radius:30px; padding:40px 44px; }
+  .q + .q { margin-top:34px; }
+  .q h3 { font-family:"Bricolage Grotesque",sans-serif; font-weight:600; font-size:28px; margin-bottom:6px; }
+  .opt { display:grid; grid-template-columns:170px 1fr 70px; gap:18px; align-items:center; margin-top:12px; font-size:22px; }
+  .track { height:16px; background:var(--bar); border-radius:8px; overflow:hidden; }
+  .fill { height:100%; background:#9aa3f7; border-radius:8px; }
+  .top { font-weight:600; } .top .fill { background:var(--blue); }
+  .pct { text-align:right; font-family:"Geist Mono",monospace; font-size:20px; }
+</style></head><body>
+<div>
+  <div class="label">State</div>
+  <div class="state">“My card was charged twice for one order. Please refund the extra charge today.”</div>
+  <div class="pass"><span><b>1</b>pass</span><span><b>0</b>generated tokens</span><span><b>2</b>answers</span></div>
+</div>
+<div class="card">
+  <div class="q"><h3>The customer wants a refund.</h3><div class="opt top"><span>true</span><div class="track"><div class="fill" style="width:95.6%"></div></div><span class="pct">96%</span></div><div class="opt"><span>false</span><div class="track"><div class="fill" style="width:4.4%"></div></div><span class="pct">4%</span></div></div>
+  <div class="q"><h3>Which team should handle this?</h3><div class="opt top"><span>billing</span><div class="track"><div class="fill" style="width:97.5%"></div></div><span class="pct">98%</span></div><div class="opt"><span>sales</span><div class="track"><div class="fill" style="width:1.5%"></div></div><span class="pct">2%</span></div><div class="opt"><span>tech support</span><div class="track"><div class="fill" style="width:1.5%"></div></div><span class="pct">1%</span></div></div>
+</div>
+</body></html>
