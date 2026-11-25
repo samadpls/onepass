@@ -1,0 +1,3 @@
+onepass[serve] @ git+https://github.com/samadpls/onepass
+huggingface_hub
+streamlit==1.67.0
