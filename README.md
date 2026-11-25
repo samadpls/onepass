@@ -152,6 +152,16 @@ model = Model("onepass-qwen3-0.6b-Q8_0.gguf")  # temperature=1.05 for the 1.7B
 model.ask(state, questions)  # {"refund": {"label": "true", "probabilities": {...}}, ...}
 ```
 
+### Demo app
+
+[demo/streamlit_app.py](demo/streamlit_app.py) is a small web app with four examples
+and editable questions. It runs the 8-bit 0.6B model on CPU, and the same folder deploys
+as-is to Streamlit Community Cloud. To run it locally:
+
+```bash
+uv run --extra serve --with streamlit --with huggingface_hub streamlit run demo/streamlit_app.py
+```
+
 ## Use it without onepass
 
 You don't need our package. The model is a normal Qwen3 checkpoint, and the only
