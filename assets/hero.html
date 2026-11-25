@@ -1,49 +1,40 @@
 <!doctype html><html><head><meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Geist:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --blue:#1d2cf3; --yellow:#ffc61a; }
+  :root { --blue:#1d2cf3; --yellow:#ffc61a; --navy:#0f1452; --lav:#c9cdfd; }
   * { box-sizing:border-box; margin:0; }
   html, body { width:100vw; height:100vh; overflow:hidden; }
   body { background:var(--blue); color:#fff; font-family:"Geist",sans-serif; display:grid;
-         grid-template-columns: 40fr 60fr; column-gap:5vw; align-items:center; padding:0 6vw; }
+         grid-template-columns: 40fr 60fr; column-gap:3vw; align-items:center; padding:0 6vw; }
   .kicker { color:var(--yellow); font-weight:600; letter-spacing:.16em; text-transform:uppercase; font-size:1.35vw; }
   h1 { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:9.2vw; line-height:.95; letter-spacing:-.035em; margin-top:1.4vw; }
   .line { font-size:2.6vw; font-weight:500; margin-top:2vw; color:var(--yellow); }
-  svg { width:100%; height:auto; display:block; }
+  .right { display:flex; align-items:center; gap:1.6vw; }
+  svg { width:23vw; height:auto; flex:none; display:block; }
+  .resp { background:var(--navy); border-radius:1.8vw; padding:2vw 2.2vw; font-family:"Geist Mono",monospace;
+          font-size:1.7vw; font-weight:500; display:grid; grid-template-columns:auto auto auto; column-gap:1.3vw; row-gap:1.3vw; }
+  .k { color:var(--lav); } .v { color:var(--yellow); font-weight:600; } .p { color:#fff; text-align:right; }
 </style></head><body>
 <div>
   <div class="kicker">Qwen Local Hackathon 2026</div>
   <h1>onepass</h1>
   <div class="line">One pass. Every answer.</div>
 </div>
-<svg viewBox="0 0 900 520" aria-hidden="true">
-  <!-- the text: a card with lines, no words -->
+<div class="right">
+<svg viewBox="0 0 560 520" aria-hidden="true">
   <rect x="10" y="130" width="230" height="260" rx="28" fill="#fff"/>
   <g fill="#d9dcf5">
     <rect x="42" y="172" width="166" height="16" rx="8"/><rect x="42" y="208" width="138" height="16" rx="8"/>
     <rect x="42" y="244" width="160" height="16" rx="8"/><rect x="42" y="280" width="110" height="16" rx="8"/>
     <rect x="42" y="316" width="150" height="16" rx="8"/><rect x="42" y="352" width="90" height="16" rx="8"/>
   </g>
-  <!-- one pass: an arrow through the ring -->
   <circle cx="400" cy="260" r="82" fill="none" stroke="#fff" stroke-width="22"/>
   <path d="M262 260 H508" stroke="#ffc61a" stroke-width="22" stroke-linecap="round"/>
   <path d="M482 228 L520 260 L482 292" fill="none" stroke="#ffc61a" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- every answer: a probability bar for every option, one highlighted per question -->
-  <g>
-    <g transform="translate(560 64)">
-      <rect width="320" height="22" rx="11" fill="#ffffff" fill-opacity=".18"/><rect width="292" height="22" rx="11" fill="#ffc61a"/>
-      <rect y="34" width="320" height="22" rx="11" fill="#ffffff" fill-opacity=".18"/><rect y="34" width="34" height="22" rx="11" fill="#fff" fill-opacity=".75"/>
-    </g>
-    <g transform="translate(560 196)">
-      <rect width="320" height="22" rx="11" fill="#ffffff" fill-opacity=".18"/><rect width="96" height="22" rx="11" fill="#fff" fill-opacity=".75"/>
-      <rect y="34" width="320" height="22" rx="11" fill="#ffffff" fill-opacity=".18"/><rect y="34" width="236" height="22" rx="11" fill="#ffc61a"/>
-      <rect y="68" width="320" height="22" rx="11" fill="#ffffff" fill-opacity=".18"/><rect y="68" width="52" height="22" rx="11" fill="#fff" fill-opacity=".75"/>
-    </g>
-    <g transform="translate(560 362)">
-      <rect width="320" height="22" rx="11" fill="#ffffff" fill-opacity=".18"/><rect width="64" height="22" rx="11" fill="#fff" fill-opacity=".75"/>
-      <rect y="34" width="320" height="22" rx="11" fill="#ffffff" fill-opacity=".18"/><rect y="34" width="148" height="22" rx="11" fill="#fff" fill-opacity=".75"/>
-      <rect y="68" width="320" height="22" rx="11" fill="#ffffff" fill-opacity=".18"/><rect y="68" width="210" height="22" rx="11" fill="#ffc61a"/>
-    </g>
-  </g>
 </svg>
+<div class="resp">
+  <span class="k">refund</span><span class="v">true</span><span class="p">0.96</span>
+  <span class="k">team</span><span class="v">billing</span><span class="p">0.98</span>
+</div>
+</div>
 </body></html>
