@@ -1,6 +1,8 @@
 # onepass
 
-![onepass: typed decisions from one forward pass](https://raw.githubusercontent.com/samadpls/onepass/main/assets/hero.png)
+<p align="center">
+  <img alt="onepass: one pass, every answer" src="https://raw.githubusercontent.com/samadpls/onepass/main/assets/hero.svg" width="100%">
+</p>
 
 A tiny open decision model. You give it a piece of text (the "state") and typed
 questions: yes/no, choose one option, or pick a level on a scale. It returns a
