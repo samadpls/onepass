@@ -1,5 +1,3 @@
-# onepass
-
 <p align="center">
   <img alt="onepass: one pass, every answer" src="https://raw.githubusercontent.com/samadpls/onepass/main/assets/hero.svg" width="100%">
 </p>
